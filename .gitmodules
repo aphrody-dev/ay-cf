@@ -214,3 +214,9 @@
 [submodule "rust/xh"]
 	path = rust/xh
 	url = ../../aphrody-labs/xh.git
+[submodule "agents/modern-web-guidance-src"]
+	path = agents/modern-web-guidance-src
+	url = ../../aphrody-labs/modern-web-guidance-src.git
+[submodule "agents/ui-ux-pro-max-skill"]
+	path = agents/ui-ux-pro-max-skill
+	url = ../../aphrody-labs/ui-ux-pro-max-skill.git

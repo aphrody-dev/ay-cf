@@ -73,6 +73,10 @@ cf-audit:
 bench-http url="https://1.1.1.1/cdn-cgi/trace" runs="5":
     bun tools/bench-http.ts {{ url }} {{ runs }}
 
+# Purge stray Claude/AGY artifacts
+purge-agents:
+    bun tools/purge-agent-slop.ts
+
 # Run Rust fmt, clippy (-D warnings), and workspace unit tests
 rust-check:
     cargo fmt --all -- --check
