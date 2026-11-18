@@ -10,7 +10,7 @@ describe("ay-cf manifests & gates", () => {
   test("forks.toml renders relative ../../aphrody-labs/*.git .gitmodules URLs", () => {
     const raw = readFileSync(resolve(root, "forks.toml"), "utf8");
     const m = parseManifest(raw);
-    expect(m.forks.length).toBe(71);
+    expect(m.forks.length).toBe(72);
     const gm = renderGitmodules(m);
     expect(gm).toContain("url = ../../aphrody-labs/workerd.git");
     expect(gm).toContain("url = ../../aphrody-labs/pingora.git");
