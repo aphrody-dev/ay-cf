@@ -1,0 +1,314 @@
+# Declarative public-safe control plane for aphrody-dev/ay-cf.
+# Literal Account IDs, Zone IDs, Tunnel UUIDs, VPS IPs, and emails live ONLY in the git-ignored `ay-cf.local.toml`.
+
+[product]
+name = "ay-cf"
+repo = "aphrody-dev/ay-cf"
+fork_org = "aphrody-labs"
+description = "Unified Cloudflare monorepo, upstream fork sync, FinOps, tunnels, Mullvad VPN, proxy VPS, and polyglot edge toolchain"
+
+[plans]
+workers_paid = true
+workers_paid_base_usd = 5.0
+r2_paid = true
+observability_paid = true
+images_stream_basic = true
+
+[finops]
+# Workers Paid included monthly quota + overage rates
+workers_included_requests = 10_000_000
+workers_overage_per_million_usd = 0.30
+workers_included_cpu_ms = 30_000_000
+workers_cpu_per_million_ms_usd = 0.02
+# Observability monthly free tier + overage
+observability_included_events = 20_000_000
+observability_overage_per_million_usd = 0.60
+# R2 Paid monthly free tier + overage
+r2_included_gb = 10.0
+r2_storage_per_gb_usd = 0.015
+r2_included_class_a = 1_000_000
+r2_class_a_per_million_usd = 4.50
+r2_included_class_b = 10_000_000
+r2_class_b_per_million_usd = 0.36
+# Target FinOps policies
+default_cdn_cpu_ms = 50
+default_api_cpu_ms = 500
+cdn_log_sampling_rate = 0.1
+api_log_sampling_rate = 1.0
+default_trace_sampling_rate = 0.05
+r2_multipart_abort_seconds = 86_400
+
+[domains]
+# Core domains + maintained sites (1 OS + 4 web estates)
+primary = ["aphrody.com", "aphrody.app"]
+sites = ["dragonballfr.com", "rosegriffon.fr"]
+
+[[site]]
+id = "aphrody-os"
+zone = "aphrody.com"
+kind = "os-and-portal"
+tunnel = "aphrody"
+origin_role = "edge-proxy"
+
+[[site]]
+id = "aphrody-webos"
+zone = "aphrody.app"
+kind = "webos-apps-and-r2-cdn"
+tunnel = "aphrody"
+origin_role = "edge-proxy"
+
+[[site]]
+id = "shenron"
+zone = "dragonballfr.com"
+kind = "community-portal-and-cdn"
+tunnel = "shenron"
+origin_role = "origin"
+
+[[site]]
+id = "rosegriffon"
+zone = "rosegriffon.fr"
+kind = "community-portal-and-api"
+tunnel = "rosegriffon"
+origin_role = "origin"
+
+[tunnels.aphrody]
+transport = "quic"
+connectors = 2
+ingress = ["dbfr.aphrody.com", "nie.aphrody.app", "mcp-origin.aphrody.com", "ssh-prd.aphrody.com"]
+
+[tunnels.rosegriffon]
+transport = "quic"
+connectors = 2
+ingress = [
+  "rosegriffon.fr",
+  "www.rosegriffon.fr",
+  "achillea.rosegriffon.fr",
+  "azalee.rosegriffon.fr",
+  "shop.rosegriffon.fr",
+  "ranked.rosegriffon.fr",
+  "api.rosegriffon.fr",
+  "bot.rosegriffon.fr",
+  "mcp.rosegriffon.fr",
+  "db.rosegriffon.fr",
+  "cdn.rosegriffon.fr",
+]
+
+[tunnels.shenron]
+transport = "quic"
+connectors = 4
+ingress = [
+  "dragonballfr.com",
+  "www.dragonballfr.com",
+  "bot.dragonballfr.com",
+  "mcp.dragonballfr.com",
+  "origin-cdn.dragonballfr.com",
+]
+
+# Active R2 buckets (tier: hot-reusable | dist | site-cdn | cold-offload)
+[buckets]
+aphrody-assets = { tier = "hot-reusable", custom_domains = ["assets.aphrody.app"], abort_multipart_seconds = 86_400, public_r2_dev = false }
+aphrody-video = { tier = "hot-reusable", custom_domains = ["video.aphrody.app", "video.aphrody.com"], abort_multipart_seconds = 86_400, public_r2_dev = false }
+aphrody-releases = { tier = "dist", custom_domains = ["releases.aphrody.com"], abort_multipart_seconds = 86_400, public_r2_dev = false }
+aphrody-dist = { tier = "dist", custom_domains = ["dist.aphrody.app"], abort_multipart_seconds = 86_400, public_r2_dev = false }
+bun-lib = { tier = "dist", custom_domains = ["bun-lib.aphrody.app"], abort_multipart_seconds = 86_400, public_r2_dev = false }
+rosegriffon-cdn = { tier = "site-cdn", custom_domains = ["r2.rosegriffon.fr"], abort_multipart_seconds = 86_400, public_r2_dev = false }
+shenron-cdn = { tier = "site-cdn", custom_domains = [], abort_multipart_seconds = 86_400, public_r2_dev = false }
+aphrody-backups = { tier = "cold-offload", custom_domains = [], abort_multipart_seconds = 86_400, public_r2_dev = false }
+aphrody-chromium = { tier = "cold-offload", custom_domains = [], abort_multipart_seconds = 86_400, public_r2_dev = false }
+aphrody-gnu = { tier = "cold-offload", custom_domains = [], abort_multipart_seconds = 86_400, public_r2_dev = false }
+aphrody-lore = { tier = "cold-offload", custom_domains = [], abort_multipart_seconds = 86_400, public_r2_dev = false }
+
+# Live Worker FinOps & Secret Contract Registry
+[workers.aphrody]
+profile = "web-router"
+cpu_ms = 250
+log_sampling = 0.1
+trace_sampling = 0.05
+workers_dev = false
+previews = false
+secrets = []
+
+[workers.aphrody-app]
+profile = "api-compute"
+cpu_ms = 500
+log_sampling = 0.25
+trace_sampling = 0.1
+workers_dev = false
+previews = false
+secrets = ["APP_SECRET", "NEON_DATABASE_URL", "TYPESAFE_API_KEY"]
+
+[workers.aphrody-deploy]
+profile = "cdn-router"
+cpu_ms = 50
+log_sampling = 0.1
+trace_sampling = 0.05
+workers_dev = false
+previews = false
+secrets = ["DEPLOY_TOKEN"]
+
+[workers.aphrody-github]
+profile = "webhook"
+cpu_ms = 500
+log_sampling = 1.0
+trace_sampling = 0.1
+workers_dev = true
+previews = false
+secrets = ["GITHUB_WEBHOOK_SECRET"]
+
+[workers.aphrody-mcp-gateway]
+profile = "api-gateway"
+cpu_ms = 500
+log_sampling = 0.25
+trace_sampling = 0.1
+workers_dev = false
+previews = false
+secrets = [
+  "CF_ACCESS_CLIENT_ID",
+  "CF_ACCESS_CLIENT_SECRET",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+  "OAUTH_SECRET",
+  "OWNER_GOOGLE_ACCOUNT",
+  "RELAY_TOKEN",
+]
+
+[workers.aphrody-releases]
+profile = "cdn-router"
+cpu_ms = 50
+log_sampling = 0.1
+trace_sampling = 0.05
+workers_dev = false
+previews = false
+secrets = []
+
+[workers.aphrody-sites]
+profile = "cdn-router"
+cpu_ms = 50
+log_sampling = 0.1
+trace_sampling = 0.05
+workers_dev = false
+previews = false
+secrets = []
+
+[workers.aphrody-webos]
+profile = "cdn-router"
+cpu_ms = 50
+log_sampling = 0.1
+trace_sampling = 0.05
+workers_dev = false
+previews = false
+secrets = []
+
+[workers.api-aphrody-com]
+profile = "api-gateway"
+cpu_ms = 250
+log_sampling = 0.25
+trace_sampling = 0.1
+workers_dev = false
+previews = false
+secrets = []
+
+[workers.ay-tools-release]
+profile = "cdn-router"
+cpu_ms = 50
+log_sampling = 0.1
+trace_sampling = 0.05
+workers_dev = true
+previews = false
+secrets = []
+
+[workers.bun-video-showcase]
+profile = "cdn-router"
+cpu_ms = 50
+log_sampling = 0.1
+trace_sampling = 0.05
+workers_dev = false
+previews = false
+secrets = []
+
+[workers.docs-proxy]
+profile = "cdn-router"
+cpu_ms = 50
+log_sampling = 0.1
+trace_sampling = 0.05
+workers_dev = true
+previews = false
+secrets = []
+
+[workers.open-source-website-assets]
+profile = "cdn-router"
+cpu_ms = 50
+log_sampling = 0.1
+trace_sampling = 0.05
+workers_dev = true
+previews = false
+secrets = []
+
+[workers.rosegriffon-edge]
+profile = "cdn-router"
+cpu_ms = 50
+log_sampling = 0.1
+trace_sampling = 0.05
+workers_dev = false
+previews = false
+secrets = []
+
+[workers.shenron-cdn]
+profile = "cdn-router"
+cpu_ms = 50
+log_sampling = 0.1
+trace_sampling = 0.05
+workers_dev = false
+previews = false
+secrets = []
+
+[cluster]
+mesh_cidr = "10.200.77.0/24"
+cloudflared_quic_port = 7844
+
+[cluster.build]
+provider = "ovh"
+os = "ubuntu-26.10"
+mesh_ip = "10.200.77.1"
+services = ["nativelink-server", "nativelink-worker", "sccache", "docker"]
+
+[cluster.edge_proxy]
+provider = "ovh"
+os = "ubuntu-26.10"
+mesh_ip = "10.200.77.3"
+services = ["pingora", "nginx", "garage-s3", "valkey", "nativelink-worker"]
+
+[cluster.origin]
+provider = "hostinger"
+os = "arch-linux"
+mesh_ip = "10.200.77.5"
+services = ["cloudflared-mig-prd", "cloudflared-rosegriffon", "docker", "nginx"]
+
+[vpn]
+provider = "mullvad"
+mode = "uid-policy-routing"
+preserve_mesh_cidr = "10.200.77.0/24"
+
+[[vpn.exit]]
+id = "us"
+purpose = "google-api"
+country = "us"
+city = "qas"
+uid = 2001
+table = 51821
+
+[[vpn.exit]]
+id = "jp"
+purpose = "crawler"
+country = "jp"
+city = "tyo"
+uid = 2002
+table = 51822
+
+[[vpn.exit]]
+id = "eu"
+purpose = "eu-proxy-checks"
+country = "fr"
+city = "par"
+uid = 2003
+table = 51823

@@ -1,0 +1,28 @@
+# Dependencies & toolchains
+node_modules/
+target/
+bazel-*
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.wrangler/
+.turbo/
+
+# Machine-local, secrets & live operational state (STANDARD.md section 2 & 14)
+ay-cf.local.toml
+.private/
+.secrets/
+.env
+.env.*
+.dev.vars
+*.pem
+*.p12
+*.key
+id_*
+*.conf
+
+# IDE & OS
+.DS_Store
+Thumbs.db
