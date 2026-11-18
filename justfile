@@ -69,6 +69,10 @@ cf-audit:
     bun tools/audit.ts --strict
     bun x wrangler deploy --dry-run --outdir target/wrangler-dry --config workers/ay-cf-gateway/wrangler.jsonc
 
+# Benchmark xh vs curl vs wget2 vs bun fetch against live Cloudflare edge
+bench-http url="https://1.1.1.1/cdn-cgi/trace" runs="5":
+    bun tools/bench-http.ts {{ url }} {{ runs }}
+
 # Run Rust fmt, clippy (-D warnings), and workspace unit tests
 rust-check:
     cargo fmt --all -- --check

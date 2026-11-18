@@ -444,3 +444,9 @@ path = "net/xdpcap"
 upstream = "cloudflare/xdpcap"
 branch = "master"
 role = "net"
+
+[[fork]]
+path = "rust/xh"
+upstream = "ducaale/xh"
+branch = "master"
+role = "rust"

@@ -211,3 +211,6 @@
 [submodule "net/xdpcap"]
 	path = net/xdpcap
 	url = ../../aphrody-labs/xdpcap.git
+[submodule "rust/xh"]
+	path = rust/xh
+	url = ../../aphrody-labs/xh.git
