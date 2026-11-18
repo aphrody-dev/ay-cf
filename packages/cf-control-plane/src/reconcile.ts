@@ -1,6 +1,479 @@
 import Cloudflare from "cloudflare";
-import type { AyCfManifest } from "./schemas.ts";
+import type { AyCfManifest, ZoneContract } from "./schemas.ts";
 import type { BucketUsageRow } from "./finops.ts";
+
+export interface LocalCloudflareContext {
+  cloudflare?: {
+    account_id?: string;
+    zones?: Record<string, string>;
+    tunnels?: Record<string, string>;
+  };
+  hosts?: {
+    build?: { ssh_alias?: string; public_ipv4?: string; public_ipv6?: string };
+    edge_proxy?: { ssh_alias?: string; public_ipv4?: string; public_ipv6?: string };
+    origin?: { ssh_alias?: string; public_ipv4?: string; public_ipv6?: string };
+  };
+}
+
+export interface ExpectedDnsRecord {
+  type: "A" | "AAAA" | "CNAME" | "MX" | "CAA" | "SRV" | "TXT";
+  name: string;
+  content: string;
+  proxied: boolean;
+  priority?: number;
+  data?: Record<string, unknown>;
+}
+
+export interface ZoneReconcileDiff {
+  zone: string;
+  expectedDnsCount: number;
+  liveDnsCount: number;
+  dnsToCreate: ExpectedDnsRecord[];
+  dnsToUpdate: Array<{ id: string; record: ExpectedDnsRecord; reason: string }>;
+  dnsToDelete: Array<{ id: string; type: string; name: string; content: string }>;
+  routesToCreate: Array<{ pattern: string; script: string }>;
+  routesToUpdate: Array<{ id: string; pattern: string; script: string }>;
+  routesToDelete: Array<{ id: string; pattern: string; script: string }>;
+  domainsToCreate: Array<{ hostname: string; service: string }>;
+  domainsToDelete: Array<{ id: string; hostname: string; service: string }>;
+}
+
+export function qualifyHostname(sub: string, zone: string): string {
+  if (sub === "@" || sub === zone) return zone;
+  if (sub.endsWith(`.${zone}`)) return sub;
+  return `${sub}.${zone}`;
+}
+
+export function interpolateHostPlaceholders(value: string, local: LocalCloudflareContext): string {
+  const b4 = local.hosts?.build?.public_ipv4 || "192.0.2.1";
+  const b6 = local.hosts?.build?.public_ipv6 || "2001:db8::1";
+  const e4 = local.hosts?.edge_proxy?.public_ipv4 || "192.0.2.2";
+  const e6 = local.hosts?.edge_proxy?.public_ipv6 || "2001:db8::2";
+  const o4 = local.hosts?.origin?.public_ipv4 || "192.0.2.3";
+  const o6 = local.hosts?.origin?.public_ipv6 || "2001:db8::3";
+  return value
+    .replaceAll("${host:build:ipv4}", b4)
+    .replaceAll("${host:build:ipv6}", b6)
+    .replaceAll("${host:edge_proxy:ipv4}", e4)
+    .replaceAll("${host:edge_proxy:ipv6}", e6)
+    .replaceAll("${host:origin:ipv4}", o4)
+    .replaceAll("${host:origin:ipv6}", o6);
+}
+
+export function expandZoneRecords(
+  zoneName: string,
+  spec: ZoneContract,
+  local: LocalCloudflareContext = {},
+): ExpectedDnsRecord[] {
+  const records: ExpectedDnsRecord[] = [];
+  const tunnelMap = local.cloudflare?.tunnels ?? {};
+
+  // 1. Direct origins (A / AAAA)
+  for (const orig of spec.direct_origins) {
+    const role = orig.target.replace(/^host:/, "") as "build" | "edge_proxy" | "origin";
+    const hostCfg = local.hosts?.[role];
+    const ip =
+      orig.type === "A"
+        ? (hostCfg?.public_ipv4 || (role === "build" ? "192.0.2.1" : role === "edge_proxy" ? "192.0.2.2" : "192.0.2.3"))
+        : (hostCfg?.public_ipv6 || (role === "build" ? "2001:db8::1" : role === "edge_proxy" ? "2001:db8::2" : "2001:db8::3"));
+    records.push({
+      type: orig.type,
+      name: qualifyHostname(orig.name, zoneName),
+      content: ip,
+      proxied: orig.proxied,
+    });
+  }
+
+  // 2. Worker AAAA 100::
+  for (const sub of spec.worker_aaaa) {
+    records.push({
+      type: "AAAA",
+      name: qualifyHostname(sub, zoneName),
+      content: "100::",
+      proxied: true,
+    });
+  }
+
+  // 3. CAA records
+  for (const caa of spec.caa_records) {
+    records.push({
+      type: "CAA",
+      name: qualifyHostname(caa.name, zoneName),
+      content: `${caa.flags} ${caa.tag} "${caa.value}"`,
+      proxied: false,
+      data: {
+        flags: caa.flags,
+        tag: caa.tag,
+        value: caa.value,
+      },
+    });
+  }
+
+  // 4. Tunnel CNAMEs
+  for (const [tunnelName, subs] of Object.entries(spec.tunnel_cnames)) {
+    const uuid = tunnelMap[tunnelName] || `00000000-0000-0000-0000-${tunnelName.padEnd(12, "0").slice(0, 12)}`;
+    const target = `${uuid}.cfargotunnel.com`;
+    for (const sub of subs) {
+      records.push({
+        type: "CNAME",
+        name: qualifyHostname(sub, zoneName),
+        content: target,
+        proxied: true,
+      });
+    }
+  }
+
+  // 5. R2 CNAMEs (public.r2.dev)
+  for (const [sub] of Object.entries(spec.r2_cnames)) {
+    records.push({
+      type: "CNAME",
+      name: qualifyHostname(sub, zoneName),
+      content: "public.r2.dev",
+      proxied: true,
+    });
+  }
+
+  // 6. Static CNAMEs (Mail / DKIM / Resend)
+  for (const sc of spec.static_cnames) {
+    records.push({
+      type: "CNAME",
+      name: qualifyHostname(sc.name, zoneName),
+      content: sc.target,
+      proxied: sc.proxied,
+    });
+  }
+
+  // 7. MX records
+  for (const mx of spec.mx_records) {
+    records.push({
+      type: "MX",
+      name: qualifyHostname(mx.name, zoneName),
+      content: mx.target,
+      proxied: false,
+      priority: mx.priority,
+    });
+  }
+
+  // 8. SRV records
+  for (const srv of spec.srv_records) {
+    const fqdn = qualifyHostname(srv.name, zoneName);
+    const parts = srv.name.split(".");
+    records.push({
+      type: "SRV",
+      name: fqdn,
+      content: `${srv.weight} ${srv.port} ${srv.target}`,
+      proxied: false,
+      priority: srv.priority,
+      data: {
+        service: parts[0] ?? "_service",
+        proto: parts[1] ?? "_tcp",
+        name: parts.length > 2 ? qualifyHostname(parts.slice(2).join("."), zoneName) : zoneName,
+        priority: srv.priority,
+        weight: srv.weight,
+        port: srv.port,
+        target: srv.target,
+      },
+    });
+  }
+
+  // 9. TXT records
+  for (const txt of spec.txt_records) {
+    records.push({
+      type: "TXT",
+      name: qualifyHostname(txt.name, zoneName),
+      content: interpolateHostPlaceholders(txt.content, local),
+      proxied: false,
+    });
+  }
+
+  return records;
+}
+
+function dnsMultiKey(r: { type: string; name: string; content: string; priority?: number }): string {
+  const t = r.type.toUpperCase();
+  const n = r.name.toLowerCase();
+  if (t === "MX") return `${t}:${n}:${r.priority ?? 0}:${r.content.toLowerCase()}`;
+  if (t === "CAA" || t === "TXT" || t === "SRV") return `${t}:${n}:${r.content}`;
+  return `${t}:${n}`;
+}
+
+export function diffZoneState(
+  zoneName: string,
+  spec: ZoneContract,
+  liveZone: LiveCloudflareSnapshot["zones"][number],
+  local: LocalCloudflareContext = {},
+): ZoneReconcileDiff {
+  const expectedDns = expandZoneRecords(zoneName, spec, local);
+  const dnsToCreate: ExpectedDnsRecord[] = [];
+  const dnsToUpdate: Array<{ id: string; record: ExpectedDnsRecord; reason: string }> = [];
+  const matchedLiveIds = new Set<string>();
+
+  const liveByMultiKey = new Map<string, Record<string, unknown>>();
+  const liveBySingleKey = new Map<string, Array<Record<string, unknown>>>();
+
+  for (const rec of liveZone.dnsRecords) {
+    const type = String(rec.type ?? "").toUpperCase();
+    const name = String(rec.name ?? "").toLowerCase();
+    const content = String(rec.content ?? "");
+    const priority = typeof rec.priority === "number" ? rec.priority : undefined;
+    const mk = dnsMultiKey({ type, name, content, priority });
+    liveByMultiKey.set(mk, rec);
+    const sk = `${type}:${name}`;
+    const list = liveBySingleKey.get(sk) ?? [];
+    list.push(rec);
+    liveBySingleKey.set(sk, list);
+  }
+
+  for (const exp of expectedDns) {
+    const mk = dnsMultiKey(exp);
+    const exact = liveByMultiKey.get(mk);
+    if (exact) {
+      const id = String(exact.id ?? "");
+      matchedLiveIds.add(id);
+      const liveContent = String(exact.content ?? "");
+      const liveProxied = Boolean(exact.proxied);
+      if (liveContent !== exp.content || liveProxied !== exp.proxied) {
+        dnsToUpdate.push({
+          id,
+          record: exp,
+          reason: `content=${liveContent}->${exp.content} proxied=${liveProxied}->${exp.proxied}`,
+        });
+      }
+      continue;
+    }
+
+    const sk = `${exp.type}:${exp.name.toLowerCase()}`;
+    const singleCandidates = (liveBySingleKey.get(sk) ?? []).filter((c) => !matchedLiveIds.has(String(c.id ?? "")));
+    if ((exp.type === "A" || exp.type === "AAAA" || exp.type === "CNAME") && singleCandidates.length === 1) {
+      const target = singleCandidates[0]!;
+      const id = String(target.id ?? "");
+      matchedLiveIds.add(id);
+      dnsToUpdate.push({
+        id,
+        record: exp,
+        reason: `content=${String(target.content)}->${exp.content} proxied=${Boolean(target.proxied)}->${exp.proxied}`,
+      });
+      continue;
+    }
+
+    dnsToCreate.push(exp);
+  }
+
+  const dnsToDelete = liveZone.dnsRecords
+    .filter((r) => !matchedLiveIds.has(String(r.id ?? "")))
+    .map((r) => ({
+      id: String(r.id ?? ""),
+      type: String(r.type ?? ""),
+      name: String(r.name ?? ""),
+      content: String(r.content ?? ""),
+    }));
+
+  // Worker Routes diff
+  const liveRoutesByPattern = new Map<string, { id: string; pattern: string; script: string }>();
+  for (const r of liveZone.workerRoutes) {
+    const pattern = String(r.pattern ?? "");
+    liveRoutesByPattern.set(pattern, {
+      id: String(r.id ?? ""),
+      pattern,
+      script: String(r.script ?? ""),
+    });
+  }
+  const routesToCreate: Array<{ pattern: string; script: string }> = [];
+  const routesToUpdate: Array<{ id: string; pattern: string; script: string }> = [];
+  const matchedRouteIds = new Set<string>();
+  for (const expRoute of spec.worker_routes) {
+    const live = liveRoutesByPattern.get(expRoute.pattern);
+    if (!live) {
+      routesToCreate.push(expRoute);
+    } else {
+      matchedRouteIds.add(live.id);
+      if (live.script !== expRoute.script) {
+        routesToUpdate.push({ id: live.id, pattern: expRoute.pattern, script: expRoute.script });
+      }
+    }
+  }
+  const routesToDelete = [...liveRoutesByPattern.values()].filter((r) => !matchedRouteIds.has(r.id));
+
+  // Worker Custom Domains diff
+  const liveDomainsByHost = new Map<string, { id: string; hostname: string; service: string }>();
+  for (const d of liveZone.workerDomains) {
+    const hostname = String(d.hostname ?? "").toLowerCase();
+    liveDomainsByHost.set(hostname, {
+      id: String(d.id ?? ""),
+      hostname,
+      service: String(d.service ?? ""),
+    });
+  }
+  const domainsToCreate: Array<{ hostname: string; service: string }> = [];
+  const matchedDomainIds = new Set<string>();
+  for (const expDom of spec.worker_domains) {
+    const h = expDom.hostname.toLowerCase();
+    const live = liveDomainsByHost.get(h);
+    if (!live || live.service !== expDom.service) {
+      domainsToCreate.push(expDom);
+    } else {
+      matchedDomainIds.add(live.id);
+    }
+  }
+  const domainsToDelete = [...liveDomainsByHost.values()].filter((d) => !matchedDomainIds.has(d.id));
+
+  return {
+    zone: zoneName,
+    expectedDnsCount: expectedDns.length,
+    liveDnsCount: liveZone.dnsRecords.length,
+    dnsToCreate,
+    dnsToUpdate,
+    dnsToDelete,
+    routesToCreate,
+    routesToUpdate,
+    routesToDelete,
+    domainsToCreate,
+    domainsToDelete,
+  };
+}
+
+export async function applyZoneReconciliation(
+  client: Cloudflare,
+  manifest: AyCfManifest,
+  snapshot: LiveCloudflareSnapshot,
+  local: LocalCloudflareContext,
+  opts: { apply: boolean; prune?: boolean },
+): Promise<{
+  zoneDiffs: ZoneReconcileDiff[];
+  appliedDnsCreates: number;
+  appliedDnsUpdates: number;
+  appliedDnsDeletes: number;
+  appliedRouteCreates: number;
+  appliedRouteUpdates: number;
+  appliedRouteDeletes: number;
+  appliedDomainCreates: number;
+  appliedDomainDeletes: number;
+}> {
+  const zoneDiffs: ZoneReconcileDiff[] = [];
+  let appliedDnsCreates = 0;
+  let appliedDnsUpdates = 0;
+  let appliedDnsDeletes = 0;
+  let appliedRouteCreates = 0;
+  let appliedRouteUpdates = 0;
+  let appliedRouteDeletes = 0;
+  let appliedDomainCreates = 0;
+  let appliedDomainDeletes = 0;
+
+  for (const liveZone of snapshot.zones) {
+    const spec = manifest.zones[liveZone.name];
+    if (!spec) continue;
+    const diff = diffZoneState(liveZone.name, spec, liveZone, local);
+    zoneDiffs.push(diff);
+
+    if (!opts.apply) continue;
+
+    // 1. Create missing DNS records
+    for (const rec of diff.dnsToCreate) {
+      await client.dns.records.create({
+        zone_id: liveZone.id,
+        type: rec.type as never,
+        name: rec.name,
+        content: rec.content,
+        ttl: 1,
+        proxied: rec.proxied,
+        ...(rec.priority !== undefined ? { priority: rec.priority } : {}),
+        ...(rec.data ? { data: rec.data as never } : {}),
+      });
+      appliedDnsCreates++;
+    }
+
+    // 2. Update drifted DNS records (e.g., auto.aphrody.com stale tunnel -> aphrody, tv.dragonballfr.com proxied=true)
+    for (const upd of diff.dnsToUpdate) {
+      await client.dns.records.edit(upd.id, {
+        zone_id: liveZone.id,
+        type: upd.record.type as never,
+        name: upd.record.name,
+        content: upd.record.content,
+        ttl: 1,
+        proxied: upd.record.proxied,
+        ...(upd.record.priority !== undefined ? { priority: upd.record.priority } : {}),
+        ...(upd.record.data ? { data: upd.record.data as never } : {}),
+      });
+      appliedDnsUpdates++;
+    }
+
+    // 3. Delete extraneous DNS records when prune is enabled
+    if (opts.prune) {
+      for (const del of diff.dnsToDelete) {
+        await client.dns.records.delete(del.id, { zone_id: liveZone.id });
+        appliedDnsDeletes++;
+      }
+    }
+
+    // 4. Create new Worker Routes BEFORE deleting wildcard/obsolete routes (zero downtime)
+    for (const r of diff.routesToCreate) {
+      await client.workers.routes.create({
+        zone_id: liveZone.id,
+        pattern: r.pattern,
+        script: r.script,
+      });
+      appliedRouteCreates++;
+    }
+
+    // 5. Update drifted Worker Routes
+    for (const r of diff.routesToUpdate) {
+      await client.workers.routes.update(r.id, {
+        zone_id: liveZone.id,
+        pattern: r.pattern,
+        script: r.script,
+      });
+      appliedRouteUpdates++;
+    }
+
+    // 6. Delete conflicting/obsolete Worker Routes (e.g., *.aphrody.app/* and redundant R2 root routes)
+    for (const r of diff.routesToDelete) {
+      await client.workers.routes.delete(r.id, { zone_id: liveZone.id });
+      appliedRouteDeletes++;
+    }
+
+    // 7. Delete conflicting Worker Custom Domains (e.g., downloads.aphrody.com on aphrody-sites)
+    const expAaaaSet = new Set(spec.worker_aaaa.map((sub) => qualifyHostname(sub, liveZone.name).toLowerCase()));
+    for (const d of diff.domainsToDelete) {
+      await client.workers.domains.delete(d.id, { account_id: snapshot.accountId });
+      appliedDomainDeletes++;
+      // Deleting a Worker Custom Domain automatically deletes its managed AAAA 100:: record; re-create if declared
+      if (expAaaaSet.has(d.hostname.toLowerCase())) {
+        await client.dns.records.create({
+          zone_id: liveZone.id,
+          type: "AAAA",
+          name: d.hostname,
+          content: "100::",
+          ttl: 1,
+          proxied: true,
+        });
+        appliedDnsCreates++;
+      }
+    }
+
+    // 8. Create missing Worker Custom Domains
+    for (const d of diff.domainsToCreate) {
+      await client.workers.domains.update({
+        account_id: snapshot.accountId,
+        zone_id: liveZone.id,
+        hostname: d.hostname,
+        service: d.service,
+      });
+      appliedDomainCreates++;
+    }
+  }
+
+  return {
+    zoneDiffs,
+    appliedDnsCreates,
+    appliedDnsUpdates,
+    appliedDnsDeletes,
+    appliedRouteCreates,
+    appliedRouteUpdates,
+    appliedRouteDeletes,
+    appliedDomainCreates,
+    appliedDomainDeletes,
+  };
+}
 
 export interface ConflictItem {
   kind:
@@ -49,7 +522,7 @@ export interface LiveCloudflareSnapshot {
   }>;
 }
 
-export function createCloudflareClient(apiToken = process.env.CLOUDFLARE_API_TOKEN): Cloudflare {
+export function createCloudflareClient(apiToken = Bun.env.CLOUDFLARE_API_TOKEN): Cloudflare {
   if (!apiToken) {
     throw new Error("CLOUDFLARE_API_TOKEN is required");
   }
@@ -94,14 +567,21 @@ export async function captureLiveSnapshot(
   const workers = await Promise.all(
     workerScripts.map(async (w) => {
       const scriptId = String(w.id);
-      const [settings, subdomain, secrets] = await Promise.all([
+      const [settings, versionSettings, subdomain, secrets] = await Promise.all([
         client.workers.scripts.settings.get(scriptId, { account_id: accountId }),
+        client.workers.scripts.scriptAndVersionSettings.get(scriptId, { account_id: accountId }).catch(() => ({
+          limits: undefined,
+        })),
         client.workers.scripts.subdomain.get(scriptId, { account_id: accountId }).catch(() => ({
           enabled: false,
           previews_enabled: false,
         })),
         client.workers.scripts.secrets.list(scriptId, { account_id: accountId }).catch(() => []),
       ]);
+      const mergedSettings = {
+        ...(settings as unknown as Record<string, unknown>),
+        ...(versionSettings.limits ? { limits: versionSettings.limits } : {}),
+      };
       const secretList = Array.isArray(secrets)
         ? secrets
         : ((secrets as { result?: Array<{ name?: string }> }).result ?? []);
@@ -112,7 +592,7 @@ export async function captureLiveSnapshot(
           enabled: Boolean((subdomain as { enabled?: boolean }).enabled),
           previews_enabled: Boolean((subdomain as { previews_enabled?: boolean }).previews_enabled),
         },
-        settings: settings as unknown as Record<string, unknown>,
+        settings: mergedSettings,
         secrets: secretList.map((s) => String((s as { name?: string }).name ?? "")).filter(Boolean),
       };
     }),
@@ -264,6 +744,7 @@ export interface SafeApplySummary {
   limitsUpdates: Array<{ worker: string; cpuMs: number; bindingsPreserved: boolean; ok: boolean; error?: string }>;
   r2LifecycleUpdates: Array<{ bucket: string; maxAgeSeconds: number; ok: boolean }>;
   r2CorsUpdates: Array<{ bucket: string; ok: boolean }>;
+  r2DevUpdates: Array<{ bucket: string; enabled: boolean; ok: boolean }>;
   cacheRulesetUpdates: Array<{ zone: string; ok: boolean; rulesCount: number }>;
 }
 
@@ -279,6 +760,7 @@ export async function applySafeOptimizations(
     limitsUpdates: [],
     r2LifecycleUpdates: [],
     r2CorsUpdates: [],
+    r2DevUpdates: [],
     cacheRulesetUpdates: [],
   };
 
@@ -489,6 +971,16 @@ export async function applySafeOptimizations(
         summary.r2CorsUpdates.push({ bucket: b.name, ok: true });
       }
     }
+
+    if (spec.public_r2_dev === false && b.managedR2Dev) {
+      if (opts.apply) {
+        await client.r2.buckets.domains.managed.update(b.name, {
+          account_id: snapshot.accountId,
+          enabled: false,
+        });
+      }
+      summary.r2DevUpdates.push({ bucket: b.name, enabled: false, ok: true });
+    }
   }
 
   // 4. Optimize Zone Cache Rulesets cleanly without altering existing origin/site rules
@@ -511,7 +1003,8 @@ export async function applySafeOptimizations(
       }
     } else if (z.name === "aphrody.app") {
       const target = existing.find((r) => String(r.expression).includes("assets.aphrody.app"));
-      const wantedExpr = '(http.host in {"assets.aphrody.app" "video.aphrody.app" "bun-lib.aphrody.app"})';
+      const wantedExpr =
+        '(http.host in {"assets.aphrody.app" "dist.aphrody.app" "video.aphrody.app" "bun-lib.aphrody.app"})';
       if (target && target.expression !== wantedExpr) {
         target.expression = wantedExpr;
         updatedRules = existing;

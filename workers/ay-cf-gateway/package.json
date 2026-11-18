@@ -1,5 +1,5 @@
 {
-  "name": "@ay-cf/gateway-worker",
+  "name": "@aphrody/ay-cf-gateway-worker",
   "version": "0.1.0",
   "private": true,
   "type": "module",

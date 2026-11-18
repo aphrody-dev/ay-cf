@@ -18,11 +18,13 @@ shenron = "<tunnel uuid>"
 [hosts.build]
 ssh_alias = "fr1"
 public_ipv4 = "<ovh build public ip>"
+public_ipv6 = "<ovh build public ipv6>"
 work_dir = "~/ay-cf"
 
 [hosts.edge_proxy]
 ssh_alias = "fr2"
 public_ipv4 = "<ovh proxy public ip>"
+public_ipv6 = "<ovh proxy public ipv6>"
 
 [hosts.origin]
 ssh_alias = "prd"

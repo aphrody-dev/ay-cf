@@ -1,11 +1,10 @@
 #!/usr/bin/env bun
 // Syncs distilled official Cloudflare skills into ay-cf/skills and generates /.well-known/agent-skills/index.json (RFC).
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { createHash } from "node:crypto";
+import { cpSync, existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const root = resolve(import.meta.dir, "..");
-const pluginSkills = resolve(process.env.HOME ?? process.env.USERPROFILE ?? "", ".gemini/plugins/cloudflare/skills");
+const pluginSkills = resolve(Bun.env.HOME ?? Bun.env.USERPROFILE ?? "", ".gemini/plugins/cloudflare/skills");
 const localSkills = join(root, "skills");
 const wellKnownDir = join(root, ".well-known/agent-skills");
 
@@ -37,13 +36,13 @@ export function buildSkillsIndex(skillsDir: string, baseUrl = "/skills"): { $sch
     if (!existsSync(mdPath)) continue;
     const raw = readFileSync(mdPath, "utf8");
     const fm = parseFrontmatter(raw);
-    const sha256 = createHash("sha256").update(raw, "utf8").digest("hex");
+    const sha256 = new Bun.CryptoHasher("sha256").update(raw).digest("hex");
     entries.push({
       name: fm.name ?? d.name,
       description: fm.description ?? `Cloudflare ${d.name} skill`,
       url: `${baseUrl}/${d.name}/SKILL.md`,
       sha256,
-      bytes: Buffer.byteLength(raw, "utf8"),
+      bytes: new TextEncoder().encode(raw).byteLength,
     });
   }
   return {
@@ -61,7 +60,6 @@ if (import.meta.main) {
     console.log(`Synced skills into ${localSkills}`);
   }
   const index = buildSkillsIndex(localSkills);
-  mkdirSync(wellKnownDir, { recursive: true });
-  writeFileSync(join(wellKnownDir, "index.json"), JSON.stringify(index, null, 2) + "\n");
+  await Bun.write(join(wellKnownDir, "index.json"), JSON.stringify(index, null, 2) + "\n");
   console.log(`Generated .well-known/agent-skills/index.json (${index.skills.length} skills)`);
 }

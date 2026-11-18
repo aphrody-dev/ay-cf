@@ -343,7 +343,7 @@ mod tests {
     }
 
     #[test]
-    fn validates_minimal_glb_header() {
+    fn validates_minimal_glb_header() -> Result<(), Box<dyn std::error::Error>> {
         let json_bytes = br#"{"asset":{"version":"2.0"}} "#;
         let json_len = u32::try_from(json_bytes.len()).unwrap_or(0);
         let total_len = 12 + 8 + json_len;
@@ -355,9 +355,10 @@ mod tests {
         glb.extend_from_slice(&0x4e4f_534au32.to_le_bytes());
         glb.extend_from_slice(json_bytes);
 
-        let (jlen, blen) = inspect_glb(&glb).expect("minimal GLB should parse");
+        let (jlen, blen) = inspect_glb(&glb)?;
         assert_eq!(jlen, json_bytes.len());
         assert_eq!(blen, 0);
         assert!(inspect_ktx2(b"not-ktx2").is_err());
+        Ok(())
     }
 }

@@ -23,7 +23,7 @@ jobs:
           persist-credentials: false
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: "1.4.5"
+          bun-version: "canary"
       - run: bun install --frozen-lockfile
       - run: bun tools/private-gate.ts
       - run: bun tools/forks.ts --check
@@ -31,6 +31,7 @@ jobs:
       - run: bun run check
       - run: bun run audit
       - run: bun x wrangler deploy --dry-run --outdir target/wrangler-dry --config workers/ay-cf-gateway/wrangler.jsonc
+      - run: bun x wrangler deploy --dry-run --outdir target/wrangler-dry-release --config workers/ay-tools-release/wrangler.jsonc
 
   rust:
     runs-on: ubuntu-latest
@@ -52,7 +53,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v6
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           enable-cache: true
       - run: uv sync --locked
@@ -77,8 +78,8 @@ jobs:
           restore-keys: bazel-${{ runner.os }}-
       - name: Install Bazelisk & run Abseil/GoogleTest suite
         run: |
-          curl -fsSL -o /usr/local/bin/bazelisk https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
-          chmod +x /usr/local/bin/bazelisk
+          sudo curl -fsSL -o /usr/local/bin/bazelisk https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+          sudo chmod +x /usr/local/bin/bazelisk
           CC=clang CXX=clang++ bazelisk test --config=linux //cpp/...
 
   gate:

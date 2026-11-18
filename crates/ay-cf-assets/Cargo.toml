@@ -21,7 +21,6 @@ serde_json.workspace = true
 spdx.workspace = true
 thiserror.workspace = true
 thumbhash.workspace = true
-toml.workspace = true
 url.workspace = true
 
 [lints]

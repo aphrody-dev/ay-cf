@@ -1,11 +1,10 @@
 #!/usr/bin/env bun
 // Validates assets/r2-catalog.toml SPDX compliance and optionally probes upstream public APIs (--probe-live).
-import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { loadR2Catalog } from "../packages/cf-control-plane/src/index.ts";
 
 const root = resolve(import.meta.dir, "..");
-const catalog = loadR2Catalog(readFileSync(join(root, "assets/r2-catalog.toml"), "utf8"));
+const catalog = loadR2Catalog(await Bun.file(join(root, "assets/r2-catalog.toml")).text());
 console.log(
   `R2 Catalog OK: ${catalog.rust_crate.length} pure-Rust crates, ${catalog.source.length} permissive sources (${catalog.meta.assets_origin}, ${catalog.meta.video_origin})`,
 );

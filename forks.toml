@@ -1,9 +1,9 @@
-# Authoritative Cloudflare fork catalog for aphrody-dev/ay-cf.
-# Every fork lives under org = "aphrody-labs" and is consumed as a relative submodule in aphrody-dev/ay-cf.
+# Authoritative Cloudflare fork catalog for aphrody-labs/ay-cf.
+# Every fork lives under org = "aphrody-labs" and is consumed as a sibling submodule in aphrody-labs/ay-cf.
 
 [meta]
 org = "aphrody-labs"
-consumer = "aphrody-dev"
+consumer = "aphrody-labs"
 
 [groups]
 runtime = "Cloudflare Workers C++23 V8/KJ runtime, CapnWeb RPC, and WASI toolchain"

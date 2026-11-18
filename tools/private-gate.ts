@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // Privacy & secret gate for tracked files in ay-cf (STANDARD.md section 2 & 14).
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 export interface Leak {
@@ -20,7 +20,7 @@ const DEFAULT_PATTERNS: [string, RegExp][] = [
   ["Private API token / secret prefix", /\b(?:ghp_|gho_|github_pat_|cfut_|cftk_|sk-[A-Za-z0-9]{20,})\S*/],
   [
     "Non-placeholder email address",
-    /\b(?!contact@aphrody\.com\b)[\w.+-]+@(?!users\.noreply\.github\.com|github\.com:|cloudflare\.com|example\.com|example\.org|yourdomain\.com|that-domain\.com|company\.com|app\.com|nonexistent\.com|recipient\.com|gmail\.com)[\w-]+\.(com|net|org|fr|io|dev)\b/i,
+    /(?<![\w.+-])(?!(?:contact|dmarc-reports)@(?:aphrody\.com|aphrody\.app|dragonballfr\.com|rosegriffon\.fr)\b)[\w.+-]+@(?!users\.noreply\.github\.com|github\.com:|cloudflare\.com|example\.com|example\.org|yourdomain\.com|that-domain\.com|company\.com|app\.com|nonexistent\.com|recipient\.com|gmail\.com)[\w-]+\.(com|net|org|fr|io|dev)\b/i,
   ],
 ];
 
@@ -56,7 +56,7 @@ export function loadLocalLiterals(root: string): string[] {
   const localFile = join(root, "ay-cf.local.toml");
   if (!existsSync(localFile)) return [];
   try {
-    const parsed = Bun.TOML.parse(require("node:fs").readFileSync(localFile, "utf8")) as Record<string, any>;
+    const parsed = Bun.TOML.parse(readFileSync(localFile, "utf8")) as Record<string, any>;
     const vals: string[] = [];
     const walk = (v: unknown) => {
       if (typeof v === "string") vals.push(v);
@@ -64,8 +64,11 @@ export function loadLocalLiterals(root: string): string[] {
       else if (v && typeof v === "object") Object.values(v).forEach(walk);
     };
     walk(parsed.cloudflare);
-    for (const h of Object.values((parsed.hosts ?? {}) as Record<string, { public_ipv4?: string }>)) {
+    for (const h of Object.values(
+      (parsed.hosts ?? {}) as Record<string, { public_ipv4?: string; public_ipv6?: string }>,
+    )) {
       if (typeof h?.public_ipv4 === "string" && h.public_ipv4) vals.push(h.public_ipv4);
+      if (typeof h?.public_ipv6 === "string" && h.public_ipv6) vals.push(h.public_ipv6);
     }
     return vals;
   } catch {

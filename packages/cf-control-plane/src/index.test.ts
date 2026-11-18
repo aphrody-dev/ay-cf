@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   AyCfManifestSchema,
   auditWranglerManifest,
   buildFinOpsReport,
+  expandZoneRecords,
   generateClusterConfigs,
   loadR2Catalog,
   parseWranglerConfig,
@@ -12,9 +12,9 @@ import {
 
 const root = resolve(import.meta.dir, "../../..");
 
-describe("@ay-cf/control-plane", () => {
-  test("validates ay-cf.toml and FinOps savings calculation", () => {
-    const raw = Bun.TOML.parse(readFileSync(resolve(root, "ay-cf.toml"), "utf8"));
+describe("@aphrody/ay-cf-control-plane", () => {
+  test("validates ay-cf.toml and FinOps savings calculation", async () => {
+    const raw = Bun.TOML.parse(await Bun.file(resolve(root, "ay-cf.toml")).text());
     const manifest = AyCfManifestSchema.parse(raw);
     expect(Object.keys(manifest.tunnels)).toEqual(["aphrody", "rosegriffon", "shenron"]);
     expect(Object.keys(manifest.buckets).length).toBe(11);
@@ -28,8 +28,30 @@ describe("@ay-cf/control-plane", () => {
     expect(report.monthlySavingsUsd).toBeGreaterThan(5);
   });
 
-  test("validates assets/r2-catalog.toml and rejects non-permissive SPDX overrides", () => {
-    const raw = readFileSync(resolve(root, "assets/r2-catalog.toml"), "utf8");
+  test("expands declarative multi-zone cartography to exact 78 + 60 + 20 + 30 = 188 DNS records and zero conflicts", async () => {
+    const manifest = AyCfManifestSchema.parse(Bun.TOML.parse(await Bun.file(resolve(root, "ay-cf.toml")).text()));
+    const aphrodyCom = expandZoneRecords("aphrody.com", manifest.zones["aphrody.com"]!);
+    const aphrodyApp = expandZoneRecords("aphrody.app", manifest.zones["aphrody.app"]!);
+    const dragonballfr = expandZoneRecords("dragonballfr.com", manifest.zones["dragonballfr.com"]!);
+    const rosegriffon = expandZoneRecords("rosegriffon.fr", manifest.zones["rosegriffon.fr"]!);
+
+    expect(aphrodyCom.length).toBe(78);
+    expect(aphrodyApp.length).toBe(60);
+    expect(dragonballfr.length).toBe(20);
+    expect(rosegriffon.length).toBe(30);
+    expect(aphrodyCom.length + aphrodyApp.length + dragonballfr.length + rosegriffon.length).toBe(188);
+
+    // Verify conflict fixes are baked into declarative state
+    expect(manifest.zones["aphrody.com"]!.tunnel_cnames.aphrody).toContain("auto");
+    expect(manifest.zones["aphrody.com"]!.worker_domains.some((d) => d.hostname === "downloads.aphrody.com")).toBe(false);
+    expect(manifest.zones["aphrody.app"]!.worker_routes.some((r) => r.pattern === "*.aphrody.app/*")).toBe(false);
+    expect(dragonballfr.find((r) => r.name === "tv.dragonballfr.com")?.proxied).toBe(true);
+    expect(manifest.secrets_store?.store_name).toBe("default-secrets-store");
+    expect(manifest.secrets_store?.required_keys.length).toBeGreaterThanOrEqual(120);
+  });
+
+  test("validates assets/r2-catalog.toml and rejects non-permissive SPDX overrides", async () => {
+    const raw = await Bun.file(resolve(root, "assets/r2-catalog.toml")).text();
     const catalog = loadR2Catalog(raw);
     expect(catalog.source.length).toBeGreaterThanOrEqual(15);
     expect(catalog.rust_crate.length).toBeGreaterThanOrEqual(18);
@@ -38,16 +60,16 @@ describe("@ay-cf/control-plane", () => {
     expect(() => loadR2Catalog(badToml)).toThrow(/blocked SPDX/i);
   });
 
-  test("parses Wrangler JSONC with trailing commas via patched jsonc-parser", () => {
-    const wranglerRaw = readFileSync(resolve(root, "workers/ay-cf-gateway/wrangler.jsonc"), "utf8");
+  test("parses Wrangler JSONC with trailing commas via patched jsonc-parser", async () => {
+    const wranglerRaw = await Bun.file(resolve(root, "workers/ay-cf-gateway/wrangler.jsonc")).text();
     const parsed = parseWranglerConfig(wranglerRaw, ".jsonc");
     expect(parsed.name).toBe("ay-cf-gateway");
     expect(parsed.limits?.cpu_ms).toBe(50);
     expect(auditWranglerManifest(wranglerRaw, ".jsonc")).toEqual([]);
   });
 
-  test("generates OVH Pingora, Hostinger nftables, Mullvad UID routes, and cloudflared configs without IP leaks", () => {
-    const manifest = AyCfManifestSchema.parse(Bun.TOML.parse(readFileSync(resolve(root, "ay-cf.toml"), "utf8")));
+  test("generates OVH Pingora, Hostinger nftables, Mullvad UID routes, and cloudflared configs without IP leaks", async () => {
+    const manifest = AyCfManifestSchema.parse(Bun.TOML.parse(await Bun.file(resolve(root, "ay-cf.toml")).text()));
     const cfg = generateClusterConfigs(manifest);
     expect(cfg.pingoraYaml).toContain("10.200.77.5:443");
     expect(cfg.nftablesOriginConf).toContain("policy drop");

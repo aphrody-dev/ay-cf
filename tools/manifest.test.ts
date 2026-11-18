@@ -7,14 +7,14 @@ import { scanFiles } from "./private-gate.ts";
 const root = resolve(import.meta.dir, "..");
 
 describe("ay-cf manifests & gates", () => {
-  test("forks.toml renders relative ../../aphrody-labs/*.git .gitmodules URLs", () => {
+  test("forks.toml renders relative ../<name>.git .gitmodules URLs", () => {
     const raw = readFileSync(resolve(root, "forks.toml"), "utf8");
     const m = parseManifest(raw);
     expect(m.forks.length).toBe(74);
     const gm = renderGitmodules(m);
-    expect(gm).toContain("url = ../../aphrody-labs/workerd.git");
-    expect(gm).toContain("url = ../../aphrody-labs/pingora.git");
-    expect(gm).toContain("url = ../../aphrody-labs/cloudflare-skills.git");
+    expect(gm).toContain("url = ../workerd.git");
+    expect(gm).toContain("url = ../pingora.git");
+    expect(gm).toContain("url = ../cloudflare-skills.git");
   });
 
   test("private-gate detects leaked IPs, home paths, emails, and tokens", () => {

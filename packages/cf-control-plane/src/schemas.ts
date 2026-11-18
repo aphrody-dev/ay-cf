@@ -61,6 +61,90 @@ export const VpnExitSchema = z.object({
   table: z.number().int().min(51_820).max(60_000),
 });
 
+export const HostTargetSchema = z.enum(["host:build", "host:edge_proxy", "host:origin"]);
+
+export const ZoneDirectOriginSchema = z.object({
+  name: z.string().min(1),
+  type: z.enum(["A", "AAAA"]),
+  target: HostTargetSchema,
+  proxied: z.boolean(),
+  comment: z.string().optional(),
+});
+
+export const ZoneStaticCnameSchema = z.object({
+  name: z.string().min(1),
+  target: z.string().min(1),
+  proxied: z.boolean().default(false),
+  comment: z.string().optional(),
+});
+
+export const ZoneMxRecordSchema = z.object({
+  name: z.string().min(1),
+  target: z.string().min(1),
+  priority: z.number().int().min(0).max(65_535),
+  comment: z.string().optional(),
+});
+
+export const ZoneCaaRecordSchema = z.object({
+  name: z.string().min(1),
+  flags: z.number().int().min(0).max(255).default(0),
+  tag: z.enum(["issue", "issuewild", "iodef"]),
+  value: z.string().min(1),
+  comment: z.string().optional(),
+});
+
+export const ZoneSrvRecordSchema = z.object({
+  name: z.string().min(1),
+  priority: z.number().int().min(0).max(65_535),
+  weight: z.number().int().min(0).max(65_535),
+  port: z.number().int().min(1).max(65_535),
+  target: z.string().min(1),
+  comment: z.string().optional(),
+});
+
+export const ZoneTxtRecordSchema = z.object({
+  name: z.string().min(1),
+  content: z.string().min(1),
+  comment: z.string().optional(),
+});
+
+export const ZoneWorkerRouteSchema = z.object({
+  pattern: z.string().min(1),
+  script: z.string().min(1),
+});
+
+export const ZoneWorkerDomainSchema = z.object({
+  hostname: z.string().min(1),
+  service: z.string().min(1),
+});
+
+export const ZoneContractSchema = z.object({
+  tunnel_cnames: z.record(z.string(), z.array(z.string())).default({}),
+  worker_aaaa: z.array(z.string()).default([]),
+  r2_cnames: z.record(z.string(), z.string()).default({}),
+  direct_origins: z.array(ZoneDirectOriginSchema).default([]),
+  static_cnames: z.array(ZoneStaticCnameSchema).default([]),
+  mx_records: z.array(ZoneMxRecordSchema).default([]),
+  caa_records: z.array(ZoneCaaRecordSchema).default([]),
+  srv_records: z.array(ZoneSrvRecordSchema).default([]),
+  txt_records: z.array(ZoneTxtRecordSchema).default([]),
+  worker_routes: z.array(ZoneWorkerRouteSchema).default([]),
+  worker_domains: z.array(ZoneWorkerDomainSchema).default([]),
+});
+
+export type ZoneContract = z.infer<typeof ZoneContractSchema>;
+
+export const SecretsStoreContractSchema = z.object({
+  store_name: z.string().min(1),
+  quota_limit: z.number().int().min(1).max(1000).default(100),
+  scopes: z.array(z.string()).min(1).default(["workers"]),
+  required_keys: z.array(z.string()).min(1),
+  bundle_overflow_key: z.string().min(1).default("APHRODY_VAULT_BUNDLE_V1"),
+  aliases: z.record(z.string(), z.string()).default({}),
+});
+
+export type SecretsStoreContract = z.infer<typeof SecretsStoreContractSchema>;
+
 export const AyCfManifestSchema = z.object({
   product: z.object({
     name: z.string().min(1),
@@ -92,6 +176,8 @@ export const AyCfManifestSchema = z.object({
   tunnels: z.record(z.string(), TunnelContractSchema),
   buckets: z.record(z.string(), BucketContractSchema),
   workers: z.record(z.string(), WorkerContractSchema),
+  zones: z.record(z.string(), ZoneContractSchema),
+  secrets_store: SecretsStoreContractSchema.optional(),
   cluster: z.object({
     mesh_cidr: z.string().min(9),
     cloudflared_quic_port: z.number().int().min(1).max(65_535),
@@ -161,7 +247,11 @@ export function parseWranglerConfig(raw: string, ext: ".jsonc" | ".json" | ".tom
   return WranglerConfigSchema.parse(parsed);
 }
 
-export function auditWranglerManifest(raw: string, ext: ".jsonc" | ".json" | ".toml"): string[] {
+export function auditWranglerManifest(
+  raw: string,
+  ext: ".jsonc" | ".json" | ".toml",
+  expectedWorkersDev = false,
+): string[] {
   const cfg = parseWranglerConfig(raw, ext);
   const issues: string[] = [];
   if (cfg.compatibility_date < "2026-01-01") {
@@ -176,8 +266,8 @@ export function auditWranglerManifest(raw: string, ext: ".jsonc" | ".json" | ".t
   if (!cfg.limits?.cpu_ms) {
     issues.push(`${cfg.name}: limits.cpu_ms must be set explicitly to bound Workers Paid CPU billing`);
   }
-  if (cfg.workers_dev !== false) {
-    issues.push(`${cfg.name}: workers_dev should be false for production Workers`);
+  if (cfg.workers_dev !== expectedWorkersDev) {
+    issues.push(`${cfg.name}: workers_dev=${String(cfg.workers_dev)} does not match ay-cf.toml (${expectedWorkersDev})`);
   }
   return issues;
 }

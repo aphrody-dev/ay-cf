@@ -2,9 +2,9 @@
 
 Unified Cloudflare monorepo, upstream fork sync, FinOps, tunnels, Mullvad VPN, proxy VPS, and polyglot edge toolchain.
 
-[![ci](https://github.com/aphrody-dev/ay-cf/actions/workflows/ci.yml/badge.svg)](https://github.com/aphrody-dev/ay-cf/actions/workflows/ci.yml)
-[![sync](https://github.com/aphrody-dev/ay-cf/actions/workflows/sync.yml/badge.svg)](https://github.com/aphrody-dev/ay-cf/actions/workflows/sync.yml)
-[![license](https://img.shields.io/github/license/aphrody-dev/ay-cf)](LICENSE)
+[![ci](https://github.com/aphrody-labs/ay-cf/actions/workflows/ci.yml/badge.svg)](https://github.com/aphrody-labs/ay-cf/actions/workflows/ci.yml)
+[![sync](https://github.com/aphrody-labs/ay-cf/actions/workflows/sync.yml/badge.svg)](https://github.com/aphrody-labs/ay-cf/actions/workflows/sync.yml)
+[![license](https://img.shields.io/github/license/aphrody-labs/ay-cf)](LICENSE)
 
 ## Why
 
@@ -13,7 +13,7 @@ Managing Cloudflare Workers Paid, R2 Paid, multiple `cloudflared` tunnels, OVH/H
 ## Install
 
 ```sh
-git clone https://github.com/aphrody-dev/ay-cf.git
+git clone https://github.com/aphrody-labs/ay-cf.git
 cd ay-cf
 bun install --frozen-lockfile
 uv sync

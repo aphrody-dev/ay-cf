@@ -1,14 +1,14 @@
 {
-  "name": "ay-cf",
+  "name": "@aphrody/ay-cf",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Unified Cloudflare monorepo, upstream fork sync, FinOps, tunnels, Mullvad VPN, proxy VPS, and polyglot edge toolchain",
   "license": "Apache-2.0",
-  "author": "aphrody-dev <contact@aphrody.com>",
+  "author": "aphrody-labs <contact@aphrody.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aphrody-dev/ay-cf.git"
+    "url": "https://github.com/aphrody-labs/ay-cf.git"
   },
   "workspaces": [
     "packages/*",
@@ -21,6 +21,7 @@
     "audit": "bun tools/audit.ts --strict",
     "finops": "bun tools/finops.ts",
     "reconcile": "bun tools/reconcile.ts",
+    "http-scan": "bun tools/http-scan.ts",
     "cluster-proxy": "bun tools/cluster-proxy.ts",
     "private-gate": "bun tools/private-gate.ts"
   },

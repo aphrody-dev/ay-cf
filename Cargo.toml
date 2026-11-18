@@ -18,7 +18,7 @@ edition = "2024"
 version = "0.1.0"
 rust-version = "1.100.0"
 license = "Apache-2.0"
-repository = "https://github.com/aphrody-dev/ay-cf"
+repository = "https://github.com/aphrody-labs/ay-cf"
 
 [workspace.dependencies]
 blake3 = { version = "1.8.7", default-features = false, features = ["std", "pure"] }

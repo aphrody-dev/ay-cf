@@ -1,6 +1,6 @@
 {
   "$schema": "https://cloudflare.github.io/agent-skills-discovery-rfc/schema.json",
-  "generated_at": "2026-11-18T10:18:53.715Z",
+  "generated_at": "2026-11-18T13:21:36.907Z",
   "skills": [
     {
       "name": "agents-sdk",
@@ -13,8 +13,8 @@
       "name": "ay-cf-finops-infra",
       "description": "Sovereign FinOps and hybrid infrastructure runbook for Cloudflare Workers Paid, R2 Paid, HA cloudflared tunnels, OVH Pingora proxy VPS, Hostinger origin firewalling, and Mullvad UID policy routing in ay-cf.",
       "url": "/skills/ay-cf-finops-infra/SKILL.md",
-      "sha256": "63f9fdc824e70df7df0217cc158b5ea8d297e7b458365d1d426864547fa8cdfe",
-      "bytes": 3528
+      "sha256": "86633ceca7d4ff30afe21d49f1686ff9cfa4a809ab76afa6ac5e2869915af987",
+      "bytes": 3529
     },
     {
       "name": "basin",

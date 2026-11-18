@@ -5,7 +5,7 @@ description: Sovereign FinOps and hybrid infrastructure runbook for Cloudflare W
 
 # Sovereign FinOps, Hybrid Cluster Proxy & Mullvad VPN Runbook
 
-Use this skill when optimizing Cloudflare Paid billing, consolidating Workers/R2/Cache rulesets, hardening `cloudflared` tunnels, generating OVH/Hostinger WireGuard proxy configs, or managing pure-Rust reusable R2 media/3D catalogs in `aphrody-dev/ay-cf`.
+Use this skill when optimizing Cloudflare Paid billing, consolidating Workers/R2/Cache rulesets, hardening `cloudflared` tunnels, generating OVH/Hostinger WireGuard proxy configs, or managing pure-Rust reusable R2 media/3D catalogs in `aphrody-labs/ay-cf`.
 
 ## Workers Paid & R2 Paid Cost Optimization
 

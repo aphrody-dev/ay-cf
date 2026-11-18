@@ -1,222 +1,222 @@
 [submodule "runtime/workerd"]
 	path = runtime/workerd
-	url = ../../aphrody-labs/workerd.git
+	url = ../workerd.git
 [submodule "runtime/workerd-cxx"]
 	path = runtime/workerd-cxx
-	url = ../../aphrody-labs/workerd-cxx.git
+	url = ../workerd-cxx.git
 [submodule "runtime/capnweb"]
 	path = runtime/capnweb
-	url = ../../aphrody-labs/capnweb.git
+	url = ../capnweb.git
 [submodule "runtime/workers-wasi"]
 	path = runtime/workers-wasi
-	url = ../../aphrody-labs/workers-wasi.git
+	url = ../workers-wasi.git
 [submodule "sdk/workers-sdk"]
 	path = sdk/workers-sdk
-	url = ../../aphrody-labs/workers-sdk.git
+	url = ../workers-sdk.git
 [submodule "sdk/cf"]
 	path = sdk/cf
-	url = ../../aphrody-labs/cf.git
+	url = ../cf.git
 [submodule "sdk/cloudflare-typescript"]
 	path = sdk/cloudflare-typescript
-	url = ../../aphrody-labs/cloudflare-typescript.git
+	url = ../cloudflare-typescript.git
 [submodule "sdk/cloudflare-templates"]
 	path = sdk/cloudflare-templates
-	url = ../../aphrody-labs/cloudflare-templates.git
+	url = ../cloudflare-templates.git
 [submodule "sdk/kumo"]
 	path = sdk/kumo
-	url = ../../aphrody-labs/kumo.git
+	url = ../kumo.git
 [submodule "sdk/vinext"]
 	path = sdk/vinext
-	url = ../../aphrody-labs/vinext.git
+	url = ../vinext.git
 [submodule "sdk/sandbox-sdk"]
 	path = sdk/sandbox-sdk
-	url = ../../aphrody-labs/sandbox-sdk.git
+	url = ../sandbox-sdk.git
 [submodule "agents/agents"]
 	path = agents/agents
-	url = ../../aphrody-labs/agents.git
+	url = ../agents.git
 [submodule "agents/cloudflare-os"]
 	path = agents/cloudflare-os
-	url = ../../aphrody-labs/cloudflare-os.git
+	url = ../cloudflare-os.git
 [submodule "agents/cloudflare-computer"]
 	path = agents/cloudflare-computer
-	url = ../../aphrody-labs/cloudflare-computer.git
+	url = ../cloudflare-computer.git
 [submodule "agents/cloudflare-mcp"]
 	path = agents/cloudflare-mcp
-	url = ../../aphrody-labs/cloudflare-mcp.git
+	url = ../cloudflare-mcp.git
 [submodule "agents/mcp-server-cloudflare"]
 	path = agents/mcp-server-cloudflare
-	url = ../../aphrody-labs/mcp-server-cloudflare.git
+	url = ../mcp-server-cloudflare.git
 [submodule "agents/cloudflare-skills"]
 	path = agents/cloudflare-skills
-	url = ../../aphrody-labs/cloudflare-skills.git
+	url = ../cloudflare-skills.git
 [submodule "agents/security-audit-skill"]
 	path = agents/security-audit-skill
-	url = ../../aphrody-labs/security-audit-skill.git
+	url = ../security-audit-skill.git
 [submodule "agents/cloudflare-ai"]
 	path = agents/cloudflare-ai
-	url = ../../aphrody-labs/cloudflare-ai.git
+	url = ../cloudflare-ai.git
 [submodule "agents/browser-run"]
 	path = agents/browser-run
-	url = ../../aphrody-labs/browser-run.git
+	url = ../browser-run.git
 [submodule "agents/kitesurf"]
 	path = agents/kitesurf
-	url = ../../aphrody-labs/kitesurf.git
+	url = ../kitesurf.git
 [submodule "rust/pingora"]
 	path = rust/pingora
-	url = ../../aphrody-labs/pingora.git
+	url = ../pingora.git
 [submodule "rust/quiche"]
 	path = rust/quiche
-	url = ../../aphrody-labs/quiche.git
+	url = ../quiche.git
 [submodule "rust/workers-rs"]
 	path = rust/workers-rs
-	url = ../../aphrody-labs/workers-rs.git
+	url = ../workers-rs.git
 [submodule "rust/boringtun"]
 	path = rust/boringtun
-	url = ../../aphrody-labs/boringtun.git
+	url = ../boringtun.git
 [submodule "rust/boring"]
 	path = rust/boring
-	url = ../../aphrody-labs/boring.git
+	url = ../boring.git
 [submodule "rust/foundations"]
 	path = rust/foundations
-	url = ../../aphrody-labs/foundations.git
+	url = ../foundations.git
 [submodule "rust/wirefilter"]
 	path = rust/wirefilter
-	url = ../../aphrody-labs/wirefilter.git
+	url = ../wirefilter.git
 [submodule "rust/web-bot-auth"]
 	path = rust/web-bot-auth
-	url = ../../aphrody-labs/web-bot-auth.git
+	url = ../web-bot-auth.git
 [submodule "rust/moq-rs"]
 	path = rust/moq-rs
-	url = ../../aphrody-labs/moq-rs.git
+	url = ../moq-rs.git
 [submodule "rust/odoh-rs"]
 	path = rust/odoh-rs
-	url = ../../aphrody-labs/odoh-rs.git
+	url = ../odoh-rs.git
 [submodule "rust/odoh-client-rs"]
 	path = rust/odoh-client-rs
-	url = ../../aphrody-labs/odoh-client-rs.git
+	url = ../odoh-client-rs.git
 [submodule "rust/nel-rs"]
 	path = rust/nel-rs
-	url = ../../aphrody-labs/nel-rs.git
+	url = ../nel-rs.git
 [submodule "rust/networkquality-rs"]
 	path = rust/networkquality-rs
-	url = ../../aphrody-labs/networkquality-rs.git
+	url = ../networkquality-rs.git
 [submodule "rust/svg-hush"]
 	path = rust/svg-hush
-	url = ../../aphrody-labs/svg-hush.git
+	url = ../svg-hush.git
 [submodule "python/workers-py"]
 	path = python/workers-py
-	url = ../../aphrody-labs/workers-py.git
+	url = ../workers-py.git
 [submodule "python/cloudflare-python"]
 	path = python/cloudflare-python
-	url = ../../aphrody-labs/cloudflare-python.git
+	url = ../cloudflare-python.git
 [submodule "python/python-workers-examples"]
 	path = python/python-workers-examples
-	url = ../../aphrody-labs/python-workers-examples.git
+	url = ../python-workers-examples.git
 [submodule "python/langchain-cloudflare"]
 	path = python/langchain-cloudflare
-	url = ../../aphrody-labs/langchain-cloudflare.git
+	url = ../langchain-cloudflare.git
 [submodule "python/bpftools"]
 	path = python/bpftools
-	url = ../../aphrody-labs/bpftools.git
+	url = ../bpftools.git
 [submodule "net/cloudflared"]
 	path = net/cloudflared
-	url = ../../aphrody-labs/cloudflared.git
+	url = ../cloudflared.git
 [submodule "net/artifact-fs"]
 	path = net/artifact-fs
-	url = ../../aphrody-labs/artifact-fs.git
+	url = ../artifact-fs.git
 [submodule "net/cfssl"]
 	path = net/cfssl
-	url = ../../aphrody-labs/cfssl.git
+	url = ../cfssl.git
 [submodule "net/cfssl_trust"]
 	path = net/cfssl_trust
-	url = ../../aphrody-labs/cfssl_trust.git
+	url = ../cfssl_trust.git
 [submodule "net/ebpf_exporter"]
 	path = net/ebpf_exporter
-	url = ../../aphrody-labs/ebpf_exporter.git
+	url = ../ebpf_exporter.git
 [submodule "net/apt-transport-cloudflared"]
 	path = net/apt-transport-cloudflared
-	url = ../../aphrody-labs/apt-transport-cloudflared.git
+	url = ../apt-transport-cloudflared.git
 [submodule "net/cbpfc"]
 	path = net/cbpfc
-	url = ../../aphrody-labs/cbpfc.git
+	url = ../cbpfc.git
 [submodule "net/certinel"]
 	path = net/certinel
-	url = ../../aphrody-labs/certinel.git
+	url = ../certinel.git
 [submodule "net/go"]
 	path = net/go
-	url = ../../aphrody-labs/go.git
+	url = ../go.git
 [submodule "net/gokeyless"]
 	path = net/gokeyless
-	url = ../../aphrody-labs/gokeyless.git
+	url = ../gokeyless.git
 [submodule "net/matched-data-cli"]
 	path = net/matched-data-cli
-	url = ../../aphrody-labs/matched-data-cli.git
+	url = ../matched-data-cli.git
 [submodule "net/mmproxy"]
 	path = net/mmproxy
-	url = ../../aphrody-labs/mmproxy.git
+	url = ../mmproxy.git
 [submodule "net/mpp-proxy"]
 	path = net/mpp-proxy
-	url = ../../aphrody-labs/mpp-proxy.git
+	url = ../mpp-proxy.git
 [submodule "net/ngtcp2"]
 	path = net/ngtcp2
-	url = ../../aphrody-labs/ngtcp2.git
+	url = ../ngtcp2.git
 [submodule "net/octopus"]
 	path = net/octopus
-	url = ../../aphrody-labs/octopus.git
+	url = ../octopus.git
 [submodule "net/pmtud"]
 	path = net/pmtud
-	url = ../../aphrody-labs/pmtud.git
+	url = ../pmtud.git
 [submodule "net/pp-browser-extension"]
 	path = net/pp-browser-extension
-	url = ../../aphrody-labs/pp-browser-extension.git
+	url = ../pp-browser-extension.git
 [submodule "net/privacy-gateway-client-library"]
 	path = net/privacy-gateway-client-library
-	url = ../../aphrody-labs/privacy-gateway-client-library.git
+	url = ../privacy-gateway-client-library.git
 [submodule "net/privacy-gateway-server-go"]
 	path = net/privacy-gateway-server-go
-	url = ../../aphrody-labs/privacy-gateway-server-go.git
+	url = ../privacy-gateway-server-go.git
 [submodule "net/privacypass-attester"]
 	path = net/privacypass-attester
-	url = ../../aphrody-labs/privacypass-attester.git
+	url = ../privacypass-attester.git
 [submodule "net/privacypass-config"]
 	path = net/privacypass-config
-	url = ../../aphrody-labs/privacypass-config.git
+	url = ../privacypass-config.git
 [submodule "net/privacypass-issuer"]
 	path = net/privacypass-issuer
-	url = ../../aphrody-labs/privacypass-issuer.git
+	url = ../privacypass-issuer.git
 [submodule "net/privacypass-origin"]
 	path = net/privacypass-origin
-	url = ../../aphrody-labs/privacypass-origin.git
+	url = ../privacypass-origin.git
 [submodule "net/privacypass-ts"]
 	path = net/privacypass-ts
-	url = ../../aphrody-labs/privacypass-ts.git
+	url = ../privacypass-ts.git
 [submodule "net/proxy-everything"]
 	path = net/proxy-everything
-	url = ../../aphrody-labs/proxy-everything.git
+	url = ../proxy-everything.git
 [submodule "net/rakelimit"]
 	path = net/rakelimit
-	url = ../../aphrody-labs/rakelimit.git
+	url = ../rakelimit.git
 [submodule "net/speedtest"]
 	path = net/speedtest
-	url = ../../aphrody-labs/speedtest.git
+	url = ../speedtest.git
 [submodule "net/tls-tris"]
 	path = net/tls-tris
-	url = ../../aphrody-labs/tls-tris.git
+	url = ../tls-tris.git
 [submodule "net/tubular"]
 	path = net/tubular
-	url = ../../aphrody-labs/tubular.git
+	url = ../tubular.git
 [submodule "net/unbound"]
 	path = net/unbound
-	url = ../../aphrody-labs/unbound.git
+	url = ../unbound.git
 [submodule "net/xdpcap"]
 	path = net/xdpcap
-	url = ../../aphrody-labs/xdpcap.git
+	url = ../xdpcap.git
 [submodule "rust/xh"]
 	path = rust/xh
-	url = ../../aphrody-labs/xh.git
+	url = ../xh.git
 [submodule "agents/modern-web-guidance-src"]
 	path = agents/modern-web-guidance-src
-	url = ../../aphrody-labs/modern-web-guidance-src.git
+	url = ../modern-web-guidance-src.git
 [submodule "agents/ui-ux-pro-max-skill"]
 	path = agents/ui-ux-pro-max-skill
-	url = ../../aphrody-labs/ui-ux-pro-max-skill.git
+	url = ../ui-ux-pro-max-skill.git

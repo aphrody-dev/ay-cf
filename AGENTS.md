@@ -1,4 +1,4 @@
-# AGENTS.md — `aphrody-dev/ay-cf`
+# AGENTS.md — `aphrody-labs/ay-cf`
 
 ## Scope & Boundaries
 

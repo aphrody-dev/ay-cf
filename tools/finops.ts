@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 // Workers Paid + R2 Paid FinOps live cost & savings reporter for ay-cf.
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
   AyCfManifestSchema,
@@ -11,18 +10,18 @@ import {
 } from "../packages/cf-control-plane/src/index.ts";
 
 const root = resolve(import.meta.dir, "..");
-const manifest = AyCfManifestSchema.parse(Bun.TOML.parse(readFileSync(join(root, "ay-cf.toml"), "utf8")));
-const localPath = join(root, "ay-cf.local.toml");
-let accountId = process.env.CLOUDFLARE_ACCOUNT_ID ?? "";
-if (!accountId && (await Bun.file(localPath).exists())) {
-  const localCfg = Bun.TOML.parse(readFileSync(localPath, "utf8")) as { cloudflare?: { account_id?: string } };
+const manifest = AyCfManifestSchema.parse(Bun.TOML.parse(await Bun.file(join(root, "ay-cf.toml")).text()));
+const localFile = Bun.file(join(root, "ay-cf.local.toml"));
+let accountId = Bun.env.CLOUDFLARE_ACCOUNT_ID ?? "";
+if (!accountId && (await localFile.exists())) {
+  const localCfg = Bun.TOML.parse(await localFile.text()) as { cloudflare?: { account_id?: string } };
   accountId = localCfg.cloudflare?.account_id ?? "";
 }
 
 let bucketRows: BucketUsageRow[];
 let source = "manifest-fallback";
 
-if (process.env.CLOUDFLARE_API_TOKEN && accountId) {
+if (Bun.env.CLOUDFLARE_API_TOKEN && accountId) {
   const client = createCloudflareClient();
   const snap = await captureLiveSnapshot(client, accountId);
   bucketRows = snap.buckets.map((b) => ({
@@ -43,8 +42,7 @@ if (process.env.CLOUDFLARE_API_TOKEN && accountId) {
 
 const report = buildFinOpsReport(manifest, bucketRows);
 const privateDir = join(root, ".private");
-mkdirSync(privateDir, { recursive: true });
-writeFileSync(join(privateDir, "finops-report.json"), JSON.stringify({ source, buckets: bucketRows, report }, null, 2) + "\n");
+await Bun.write(join(privateDir, "finops-report.json"), JSON.stringify({ source, buckets: bucketRows, report }, null, 2) + "\n");
 
 const md = [
   "# ay-cf Cloudflare FinOps Report",
@@ -67,5 +65,5 @@ const md = [
   ...report.recommendations.map((r) => `- ${r}`),
   "",
 ].join("\n");
-writeFileSync(join(privateDir, "finops-report.md"), md);
+await Bun.write(join(privateDir, "finops-report.md"), md);
 console.log(`FinOps (${source}): total=${report.totalR2Gb.toFixed(2)} GB, baseline=$${report.baselineBill.totalUsd.toFixed(2)}/mo -> optimized=$${report.optimizedBill.totalUsd.toFixed(2)}/mo (saves $${report.monthlySavingsUsd.toFixed(2)}/mo)`);
