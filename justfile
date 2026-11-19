@@ -4,6 +4,9 @@ export CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS := "-C target-cpu=native"
 
 just := just_executable()
 
+# Checkout of aphrody-labs/ay-vercel: it owns the forks, submodules and sync tools (export AY_VERCEL)
+ay_vercel := env_var("AY_VERCEL")
+
 # List available ay-cf Cloudflare, FinOps, cluster, VPN, and toolchain recipes
 default:
     @{{ just }} --list
@@ -13,23 +16,23 @@ check: private-gate forks-check submodules-check bun-check cf-audit py-check
 
 # Verify forks.toml manifest schema and group structure
 forks-check:
-    bun tools/forks.ts --check
+    bun {{ ay_vercel }}/tools/forks.ts --check
 
 # Create and harden any missing aphrody-labs Cloudflare forks
 forks-ensure:
-    bun tools/forks.ts --ensure
+    bun {{ ay_vercel }}/tools/forks.ts --ensure
 
 # Merge upstream across all aphrody-labs forks and update 160000 gitlinks + ledger
 sync:
-    bun tools/sync.ts --apply
+    bun {{ ay_vercel }}/tools/sync.ts --apply
 
 # Verify .gitmodules and 160000 gitlinks match forks.toml
 submodules-check:
-    bun tools/submodules.ts --check
+    bun {{ ay_vercel }}/tools/submodules.ts --check
 
 # Selectively shallow-checkout submodules by path, group, or fork name (e.g. `just submodules-init rust/pingora`)
 submodules-init +paths:
-    bun tools/submodules.ts --init {{ paths }}
+    bun {{ ay_vercel }}/tools/submodules.ts --init {{ paths }}
 
 # Sync official Cloudflare skills into skills/ and regenerate /.well-known/agent-skills/index.json
 skills-sync:

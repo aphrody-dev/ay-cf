@@ -26,8 +26,15 @@ jobs:
           bun-version: "canary"
       - run: bun install --frozen-lockfile
       - run: bun tools/private-gate.ts
-      - run: bun tools/forks.ts --check
-      - run: bun tools/submodules.ts --check
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: aphrody-labs/ay-vercel
+          path: .ay-vercel
+          sparse-checkout: tools
+          persist-credentials: false
+      - run: echo "AY_VERCEL=$GITHUB_WORKSPACE/.ay-vercel" >> "$GITHUB_ENV"
+      - run: bun "$AY_VERCEL/tools/forks.ts" --check
+      - run: bun "$AY_VERCEL/tools/submodules.ts" --check
       - run: bun run check
       - run: bun run audit
       - run: bun x wrangler deploy --dry-run --outdir target/wrangler-dry --config workers/ay-cf-gateway/wrangler.jsonc

@@ -35,11 +35,13 @@ The `ay-cf-*` crates and the docs (architecture, FinOps, tunnels, R2 assets, too
 
 ## Development
 
+The forks, submodules and sync tools are owned by `aphrody-labs/ay-vercel`: set `AY_VERCEL` to a checkout of it (CI checks it out).
+
 ```sh
 just check
 just cpp-check
-bun tools/forks.ts --check
-bun tools/submodules.ts --check
+bun "$AY_VERCEL/tools/forks.ts" --check
+bun "$AY_VERCEL/tools/submodules.ts" --check
 ```
 
 Selectively initialize any submodule group on demand without cloning the full graph:
