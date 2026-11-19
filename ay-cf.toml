@@ -235,6 +235,15 @@ workers_dev = false
 previews = false
 secrets = []
 
+[workers.auto]
+profile = "api-compute"
+cpu_ms = 500
+log_sampling = 0.1
+trace_sampling = 0.05
+workers_dev = false
+previews = false
+secrets = ["AUTO_MASTER_KEY", "BETTER_AUTH_SECRET"]
+
 [workers.docs-proxy]
 profile = "cdn-router"
 cpu_ms = 50
@@ -284,7 +293,6 @@ aphrody = [
   "ai",
   "art",
   "auth",
-  "auto",
   "bot",
   "bxc",
   "cad",
@@ -572,6 +580,10 @@ service = "aphrody-sites"
 [[zones."aphrody.com".worker_domains]]
 hostname = "mcp.aphrody.com"
 service = "aphrody-mcp-gateway"
+
+[[zones."aphrody.com".worker_domains]]
+hostname = "auto.aphrody.com"
+service = "auto"
 
 
 [zones."aphrody.app"]
