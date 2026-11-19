@@ -10,7 +10,6 @@
 
 - Prefer battle-tested ecosystem libraries over homegrown wrappers:
   - **TypeScript / Workers**: `cloudflare` official SDK, `hono`, `zod`, `wrangler`, `jsonc-parser` (patched in `patches/`).
-  - **Rust**: `blake3` (`pure`), `spdx`, `http`, `http-range-header`, `gltf`, `ktx2`, `etagere`, `thumbhash`, `serde`, `toml`, `#![forbid(unsafe_code)]`, zero `.unwrap()`/`.expect()` outside tests, no `mod.rs`.
   - **C++23 / Bazel 9**: `rules_cc`, `abseil-cpp` (`StatusOr`, `Span`, `ComputeCrc32c`), `googletest`, Clang/LLVM 23.
   - **Python 3.13**: official `cloudflare` SDK, `pydantic` v2, `httpx`, managed via `uv` and checked with `ruff`.
 - Always run `wrangler types` after changing Worker bindings in `wrangler.jsonc`.

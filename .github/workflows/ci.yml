@@ -33,19 +33,6 @@ jobs:
       - run: bun x wrangler deploy --dry-run --outdir target/wrangler-dry --config workers/ay-cf-gateway/wrangler.jsonc
       - run: bun x wrangler deploy --dry-run --outdir target/wrangler-dry-release --config workers/ay-tools-release/wrangler.jsonc
 
-  rust:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - run: rustup toolchain install && rustc --version
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: cargo fmt --all -- --check
-      - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo test --workspace --locked
-
   python:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -84,12 +71,11 @@ jobs:
 
   gate:
     if: always()
-    needs: [bun-and-audit, rust, python, cpp-bazel]
+    needs: [bun-and-audit, python, cpp-bazel]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - run: |
           test "${{ needs.bun-and-audit.result }}" = success
-          test "${{ needs.rust.result }}" = success
           test "${{ needs.python.result }}" = success
           test "${{ needs.cpp-bazel.result }}" = success

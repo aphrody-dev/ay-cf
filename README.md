@@ -31,12 +31,7 @@ just r2-catalog
 
 ## Documentation
 
-- [Documentation Index](docs/index.md)
-- [Cloudflare & Hybrid Infrastructure Architecture](docs/architecture.md)
-- [Workers Paid & R2 Paid FinOps Guide](docs/finops.md)
-- [Tunnels, OVH/Hostinger Proxy VPS & Mullvad Split-Tunneling](docs/cluster-vpn-tunnels.md)
-- [Pure-Rust Media Crates & Reusable R2 Asset Catalog](docs/r2-reusable-assets.md)
-- [Polyglot Toolchains (Bun, Rust, Clang/Bazel, uv/Ruff)](docs/toolchains.md)
+The `ay-cf-*` crates and the docs (architecture, FinOps, tunnels, R2 assets, toolchains) live in [`aphrody-labs/ay`](https://github.com/aphrody-labs/ay) (`crates/ay-cf-*`, `docs/imported/ay-cf`).
 
 ## Development
 

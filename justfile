@@ -8,8 +8,8 @@ just := just_executable()
 default:
     @{{ just }} --list
 
-# Run full polyglot verification (privacy gate, forks/submodules, Bun/Wrangler, Python/uv/ruff, Rust, C++/Bazel)
-check: private-gate forks-check submodules-check bun-check cf-audit py-check rust-check
+# Run full polyglot verification (privacy gate, forks/submodules, Bun/Wrangler, Python/uv/ruff, C++/Bazel)
+check: private-gate forks-check submodules-check bun-check cf-audit py-check
 
 # Verify forks.toml manifest schema and group structure
 forks-check:
@@ -76,12 +76,6 @@ bench-http url="https://1.1.1.1/cdn-cgi/trace" runs="5":
 # Purge stray Claude/AGY artifacts
 purge-agents:
     bun tools/purge-agent-slop.ts
-
-# Run Rust fmt, clippy (-D warnings), and workspace unit tests
-rust-check:
-    cargo fmt --all -- --check
-    cargo clippy --workspace --all-targets -- -D warnings
-    cargo test --workspace
 
 # Run Python Ruff lint/format checks and pytest suite via uv
 py-check:
