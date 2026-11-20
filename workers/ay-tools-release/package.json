@@ -1,6 +1,0 @@
-{
-  "name": "@aphrody/ay-tools-release",
-  "private": true,
-  "type": "module",
-  "scripts": { "deploy": "wrangler deploy" }
-}

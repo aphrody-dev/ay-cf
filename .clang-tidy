@@ -1,9 +1,0 @@
-Checks: >
-  -*,
-  bugprone-*,
-  clang-analyzer-*,
-  modernize-*,
-  performance-*,
-  readability-identifier-naming
-WarningsAsErrors: ''
-HeaderFilterRegex: '^(cpp)/.*'
